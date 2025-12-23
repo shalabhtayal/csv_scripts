@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek API Diagnostic Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'SF Pro', -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(25, 25, 35, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+            padding: 30px 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4361ee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: "▶";
+            font-size: 0.9rem;
+            color: #4361ee;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 14px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 2px solid #334155;
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4361ee;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .api-key-container {
+            position: relative;
+        }
+
+        .api-key-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .endpoint-display {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4361ee;
+        }
+
+        .endpoint-display .label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .endpoint-display .value {
+            color: #4cc9f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            word-break: break-all;
+        }
+
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        @media (max-width: 600px) {
+            .test-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            padding: 16px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(67, 97, 238, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(67, 97, 238, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #4cc9f0;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-container {
+            margin-top: 25px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-content {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-tabs {
+            display: flex;
+            background: rgba(30, 30, 46, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-tab {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .result-tab.active {
+            color: #4cc9f0;
+            border-bottom-color: #4cc9f0;
+            background: rgba(76, 201, 240, 0.05);
+        }
+
+        .result-panel {
+            padding: 20px;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-panel.active {
+            display: block;
+        }
+
+        .response-viewer {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .json-key {
+            color: #4cc9f0;
+        }
+
+        .json-string {
+            color: #9ae6b4;
+        }
+
+        .json-number {
+            color: #fbb6ce;
+        }
+
+        .json-boolean {
+            color: #fbbf24;
+        }
+
+        .json-null {
+            color: #94a3b8;
+        }
+
+        .test-results {
+            margin-top: 20px;
+        }
+
+        .test-result {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #94a3b8;
+            transition: all 0.3s;
+        }
+
+        .test-result.success {
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .test-result.error {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .test-result.warning {
+            border-left-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .test-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .test-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #94a3b8;
+            min-width: 120px;
+        }
+
+        .detail-value {
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .timestamp {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .copy-button {
+            background: rgba(67, 97, 238, 0.2);
+            border: 1px solid rgba(67, 97, 238, 0.4);
+            color: #94a3b8;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .copy-button:hover {
+            background: rgba(67, 97, 238, 0.3);
+            color: #ffffff;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #4361ee;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .history-panel {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .history-item:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .history-time {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        .history-endpoint {
+            color: #4cc9f0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .history-status {
+            float: right;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .status-200 {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .code-block code {
+            font-family: 'Courier New', monospace;
+            color: #f1f5f9;
+        }
+
+        .curl-command {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #4361ee;
+        }
+
+        .curl-command code {
+            font-family: 'Courier New', monospace;
+            color: #9ae6b4;
+            display: block;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .debug-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tool-card {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tool-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(67, 97, 238, 0.3);
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .tool-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+
+        .tool-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .tool-desc {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 DeepSeek API Diagnostic Suite</h1>
+            <p class="subtitle">Comprehensive testing and debugging tool for DeepSeek API endpoints</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Controls and Configuration -->
+            <div class="panel">
+                <h2 class="panel-title">⚙️ Configuration</h2>
+                
+                <div class="endpoint-display">
+                    <div class="label">API Endpoint (Hardcoded)</div>
+                    <div class="value" id="hardcodedEndpoint">https://api.deepseek.com</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="apiKey">DeepSeek API Key</label>
+                    <div class="api-key-container">
+                        <input type="password" id="apiKey" placeholder="sk-..." value="">
+                        <button class="api-key-toggle" onclick="toggleApiKeyVisibility()">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="testPrompt">Test Prompt</label>
+                    <textarea id="testPrompt" placeholder="Enter a test prompt for chat completion...">Hello! Please respond with a simple greeting and confirm you received this message.</textarea>
+                </div>
+                
+                <div class="debug-tools">
+                    <div class="tool-card" onclick="testEndpointVariations()">
+                        <div class="tool-icon">🔄</div>
+                        <div class="tool-title">Test Endpoint Variations</div>
+                        <div class="tool-desc">Test /v1/, /chat/, and root endpoints</div>
+                    </div>
+                    <div class="tool-card" onclick="generateCurlCommand()">
+                        <div class="tool-icon">💻</div>
+                        <div class="tool-title">Generate cURL</div>
+                        <div class="tool-desc">Create a cURL command for terminal testing</div>
+                    </div>
+                    <div class="tool-card" onclick="clearHistory()">
+                        <div class="tool-icon">🗑️</div>
+                        <div class="tool-title">Clear History</div>
+                        <div class="tool-desc">Remove all test history</div>
+                    </div>
+                </div>
+                
+                <div class="test-buttons">
+                    <button class="btn btn-primary" onclick="runAllTests()">
+                        <span>🚀</span> Run All Tests
+                    </button>
+                    <button class="btn btn-secondary" onclick="testConnectivity()">
+                        <span>📡</span> Test Connectivity
+                    </button>
+                    <button class="btn btn-secondary" onclick="testModels()">
+                        <span>🤖</span> List Models
+                    </button>
+                    <button class="btn btn-secondary" onclick="testChat()">
+                        <span>💬</span> Test Chat
+                    </button>
+                    <button class="btn btn-danger" onclick="stopTests()">
+                        <span>⏹️</span> Stop All
+                    </button>
+                    <button class="btn btn-success" onclick="exportResults()">
+                        <span>📥</span> Export Results
+                    </button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTests">0</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="successTests">0</div>
+                        <div class="stat-label">Successful</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="failedTests">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgResponseTime">0ms</div>
+                        <div class="stat-label">Avg Response</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Results and Debugging -->
+            <div class="panel">
+                <h2 class="panel-title">📊 Test Results & Debugging</h2>
+                
+                <div class="result-container">
+                    <div class="result-header">
+                        <h3 style="margin: 0;">Detailed Results</h3>
+                        <button class="copy-button" onclick="copyAllResults()">Copy All Results</button>
+                    </div>
+                    
+                    <div class="result-content">
+                        <div class="result-tabs">
+                            <button class="result-tab active" onclick="switchTab('testResults')">Test Results</button>
+                            <button class="result-tab" onclick="switchTab('responseViewer')">Response Viewer</button>
+                            <button class="result-tab" onclick="switchTab('requestHistory')">Request History</button>
+                            <button class="result-tab" onclick="switchTab('debugInfo')">Debug Info</button>
+                        </div>
+                        
+                        <div id="testResultsPanel" class="result-panel active">
+                            <div class="test-results" id="testResultsContainer">
+                                <!-- Test results will appear here -->
+                                <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                                    <div style="font-size: 3rem; margin-bottom: 20px;">🔍</div>
+                                    <h3>No tests run yet</h3>
+                                    <p>Run tests using the buttons on the left</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="responseViewerPanel" class="result-panel">
+                            <div class="response-viewer" id="responseViewer">
+                                {/* Response JSON will be displayed here with syntax highlighting */}
+                            </div>
+                        </div>
+                        
+                        <div id="requestHistoryPanel" class="result-panel">
+                            <div class="history-panel" id="requestHistory">
+                                {/* Request history will appear here */}
+                            </div>
+                        </div>
+                        
+                        <div id="debugInfoPanel" class="result-panel">
+                            <div class="debug-info">
+                                <h4>Debug Information</h4>
+                                <div class="detail-row">
+                                    <div class="detail-label">User Agent:</div>
+                                    <div class="detail-value" id="userAgent"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Browser:</div>
+                                    <div class="detail-value" id="browserInfo"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Timestamp:</div>
+                                    <div class="detail-value" id="currentTimestamp"></div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">API Status:</div>
+                                    <div class="detail-value" id="apiStatus">Not tested</div>
+                                </div>
+                                <div class="curl-command" id="curlCommandContainer" style="display: none;">
+                                    <strong>cURL Command:</strong>
+                                    <code id="curlCommand"></code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block" style="margin-top: 20px;">
+                    <strong>Quick Test cURL Command:</strong>
+                    <code id="quickCurl">curl -X POST https://api.deepseek.com/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello"}]}'</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const state = {
+            testHistory: [],
+            currentTests: 0,
+            successfulTests: 0,
+            failedTests: 0,
+            totalResponseTime: 0,
+            isRunning: false,
+            baseEndpoint: 'https://api.deepseek.com'
+        };
+
+        // DOM Elements
+        const elements = {
+            apiKey: document.getElementById('apiKey'),
+            testPrompt: document.getElementById('testPrompt'),
+            testResultsContainer: document.getElementById('testResultsContainer'),
+            responseViewer: document.getElementById('responseViewer'),
+            requestHistory: document.getElementById('requestHistory'),
+            totalTests: document.getElementById('totalTests'),
+            successTests: document.getElementById('successTests'),
+            failedTests: document.getElementById('failedTests'),
+            avgResponseTime: document.getElementById('avgResponseTime'),
+            userAgent: document.getElementById('userAgent'),
+            browserInfo: document.getElementById('browserInfo'),
+            currentTimestamp: document.getElementById('currentTimestamp'),
+            apiStatus: document.getElementById('apiStatus'),
+            curlCommand: document.getElementById('curlCommand'),
+            curlCommandContainer: document.getElementById('curlCommandContainer'),
+            quickCurl: document.getElementById('quickCurl')
+        };
+
+        // Initialize
+        function init() {
+            // Load saved API key
+            const savedKey = localStorage.getItem('deepseek_api_key');
+            if (savedKey) {
+                elements.apiKey.value = savedKey;
+            }
+            
+            // Auto-save API key
+            elements.apiKey.addEventListener('input', (e) => {
+                localStorage.setItem('deepseek_api_key', e.target.value);
+            });
+            
+            // Set debug info
+            elements.userAgent.textContent = navigator.userAgent;
+            elements.browserInfo.textContent = `${navigator.platform} - ${navigator.language}`;
+            updateTimestamp();
+            
+            // Update quick curl command
+            updateQuickCurl();
+            
+            // Update stats every second
+            setInterval(updateTimestamp, 1000);
+            
+            console.log('DeepSeek API Diagnostic Tool initialized');
+        }
+
+        // Utility Functions
+        function updateTimestamp() {
+            elements.currentTimestamp.textContent = new Date().toISOString();
+        }
+
+        function updateQuickCurl() {
+            const apiKey = elements.apiKey.value || 'YOUR_API_KEY';
+            elements.quickCurl.textContent = `curl -X POST https://api.deepseek.com/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello"}]}'`;
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = elements.apiKey;
+            const toggle = document.querySelector('.api-key-toggle');
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '👁️‍🗨️';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+
+        function switchTab(tabName) {
+            // Hide all panels
+            document.querySelectorAll('.result-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.result-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected panel and activate tab
+            document.getElementById(tabName + 'Panel').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Test Functions
+        async function runAllTests() {
+            if (!validateApiKey()) return;
+            
+            state.isRunning = true;
+            updateButtons(true);
+            
+            await testConnectivity();
+            await testModels();
+            await testChat();
+            await testEndpointVariations();
+            
+            state.isRunning = false;
+            updateButtons(false);
+        }
+
+        async function testConnectivity() {
+            const testId = 'connectivity_' + Date.now();
+            const startTime = Date.now();
+            
+            addTestResult({
+                id: testId,
+                title: 'Endpoint Connectivity Test',
+                status: 'running',
+                details: `Testing connection to ${state.baseEndpoint}`
+            });
+            
+            try {
+                // Try HEAD request first (no CORS issues)
+                const response = await fetch(state.baseEndpoint, {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                const responseTime = Date.now() - startTime;
+                state.totalResponseTime += responseTime;
+                
+                addTestResult({
+                    id: testId,
+                    title: 'Endpoint Connectivity Test',
+                    status: 'success',
+                    details: `Endpoint reachable in ${responseTime}ms`,
+                    responseTime: responseTime,
+                    data: {
+                        endpoint: state.baseEndpoint,
+                        method: 'HEAD',
+                        responseTime: responseTime
+                    }
+                });
+                
+                updateStats();
+                return true;
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                
+                addTestResult({
+                    id: testId,
+                    title: 'Endpoint Connectivity Test',
+                    status: 'error',
+                    details: `Connection failed: ${error.message}`,
+                    responseTime: responseTime,
+                    data: {
+                        endpoint: state.baseEndpoint,
+                        error: error.message,
+                        responseTime: responseTime
+                    }
+                });
+                
+                updateStats();
+                return false;
+            }
+        }
+
+        async function testModels() {
+            if (!validateApiKey()) return false;
+            
+            const testId = 'models_' + Date.now();
+            const startTime = Date.now();
+            const endpoint = `${state.baseEndpoint}/models`;
+            
+            addTestResult({
+                id: testId,
+                title: 'List Available Models',
+                status: 'running',
+                details: `Fetching models from ${endpoint}`
+            });
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${elements.apiKey.value}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const responseTime = Date.now() - startTime;
+                state.totalResponseTime += responseTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Store full response for viewing
+                state.lastResponse = {
+                    endpoint: endpoint,
+                    method: 'GET',
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    data: data,
+                    responseTime: responseTime
+                };
+                
+                // Display response in viewer
+                displayResponse(state.lastResponse);
+                
+                // Check for DeepSeek models
+                const deepseekModels = data.data ? 
+                    data.data.filter(m => m.id && m.id.includes('deepseek')) : [];
+                
+                addTestResult({
+                    id: testId,
+                    title: 'List Available Models',
+                    status: 'success',
+                    details: `Found ${data.data ? data.data.length : 0} models (${deepseekModels.length} DeepSeek models) in ${responseTime}ms`,
+                    responseTime: responseTime,
+                    data: {
+                        endpoint: endpoint,
+                        totalModels: data.data ? data.data.length : 0,
+                        deepseekModels: deepseekModels.length,
+                        sampleModels: deepseekModels.slice(0, 3).map(m => m.id),
+                        responseTime: responseTime
+                    }
+                });
+                
+                updateStats();
+                return true;
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                
+                addTestResult({
+                    id: testId,
+                    title: 'List Available Models',
+                    status: 'error',
+                    details: `Failed to fetch models: ${error.message}`,
+                    responseTime: responseTime,
+                    data: {
+                        endpoint: endpoint,
+                        error: error.message,
+                        responseTime: responseTime
+                    }
+                });
+                
+                updateStats();
+                return false;
+            }
+        }
+
+        async function testChat() {
+            if (!validateApiKey()) return false;
+            
+            const testId = 'chat_' + Date.now();
+            const startTime = Date.now();
+            
+            // Test multiple endpoint variations
+            const endpoints = [
+                `${state.baseEndpoint}/chat/completions`,
+                `${state.baseEndpoint}/v1/chat/completions`
+            ];
+            
+            let success = false;
+            let successfulEndpoint = '';
+            
+            for (const endpoint of endpoints) {
+                addTestResult({
+                    id: testId + '_' + endpoint,
+                    title: `Chat Completion Test (${endpoint.split('/').pop()})`,
+                    status: 'running',
+                    details: `Testing chat completion at ${endpoint}`
+                });
+                
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${elements.apiKey.value}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: elements.testPrompt.value || 'Hello, please respond with a simple greeting.'
+                                }
+                            ],
+                            max_tokens: 100,
+                            temperature: 0.7,
+                            stream: false
+                        })
+                    });
+                    
+                    const responseTime = Date.now() - startTime;
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                    }
+                    
+                    const data = await response.json();
+                    state.totalResponseTime += responseTime;
+                    
+                    // Store full response
+                    state.lastResponse = {
+                        endpoint: endpoint,
+                        method: 'POST',
+                        status: response.status,
+                        headers: Object.fromEntries(response.headers.entries()),
+                        data: data,
+                        responseTime: responseTime
+                    };
+                    
+                    // Display response
+                    displayResponse(state.lastResponse);
+                    
+                    success = true;
+                    successfulEndpoint = endpoint;
+                    
+                    addTestResult({
+                        id: testId + '_' + endpoint,
+                        title: `Chat Completion Test (${endpoint.split('/').pop()})`,
+                        status: 'success',
+                        details: `Chat response received in ${responseTime}ms`,
+                        responseTime: responseTime,
+                        data: {
+                            endpoint: endpoint,
+                            response: data.choices ? data.choices[0].message.content.substring(0, 100) + '...' : 'No content',
+                            responseTime: responseTime,
+                            model: data.model || 'unknown'
+                        }
+                    });
+                    
+                    break; // Stop testing if one endpoint works
+                } catch (error) {
+                    const responseTime = Date.now() - startTime;
+                    
+                    addTestResult({
+                        id: testId + '_' + endpoint,
+                        title: `Chat Completion Test (${endpoint.split('/').pop()})`,
+                        status: 'error',
+                        details: `Failed: ${error.message}`,
+                        responseTime: responseTime,
+                        data: {
+                            endpoint: endpoint,
+                            error: error.message,
+                            responseTime: responseTime
+                        }
+                    });
+                }
+            }
+            
+            if (success) {
+                elements.apiStatus.textContent = `Working (${successfulEndpoint})`;
+                elements.apiStatus.style.color = '#10b981';
+            } else {
+                elements.apiStatus.textContent = 'All endpoints failed';
+                elements.apiStatus.style.color = '#ef4444';
+            }
+            
+            updateStats();
+            return success;
+        }
+
+        async function testEndpointVariations() {
+            if (!validateApiKey()) return;
+            
+            const variations = [
+                { path: '/chat/completions', description: 'Current documented endpoint' },
+                { path: '/v1/chat/completions', description: 'Legacy v1 endpoint' },
+                { path: '/completions', description: 'Root completions endpoint' },
+                { path: '/v1/completions', description: 'Legacy completions endpoint' }
+            ];
+            
+            for (const variation of variations) {
+                const endpoint = state.baseEndpoint + variation.path;
+                const testId = 'variation_' + Date.now() + '_' + variation.path;
+                const startTime = Date.now();
+                
+                addTestResult({
+                    id: testId,
+                    title: `Endpoint Variation: ${variation.path}`,
+                    status: 'running',
+                    details: `Testing ${variation.description}`
+                });
+                
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${elements.apiKey.value}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [{ role: 'user', content: 'Test' }],
+                            max_tokens: 10
+                        })
+                    });
+                    
+                    const responseTime = Date.now() - startTime;
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        addTestResult({
+                            id: testId,
+                            title: `Endpoint Variation: ${variation.path}`,
+                            status: 'success',
+                            details: `Endpoint works! Status: ${response.status}`,
+                            responseTime: responseTime,
+                            data: {
+                                endpoint: endpoint,
+                                status: response.status,
+                                description: variation.description,
+                                responseTime: responseTime
+                            }
+                        });
+                    } else {
+                        addTestResult({
+                            id: testId,
+                            title: `Endpoint Variation: ${variation.path}`,
+                            status: 'warning',
+                            details: `Endpoint exists but returned ${response.status}`,
+                            responseTime: responseTime,
+                            data: {
+                                endpoint: endpoint,
+                                status: response.status,
+                                description: variation.description,
+                                responseTime: responseTime
+                            }
+                        });
+                    }
+                } catch (error) {
+                    const responseTime = Date.now() - startTime;
+                    
+                    addTestResult({
+                        id: testId,
+                        title: `Endpoint Variation: ${variation.path}`,
+                        status: 'error',
+                        details: `Failed: ${error.message}`,
+                        responseTime: responseTime,
+                        data: {
+                            endpoint: endpoint,
+                            error: error.message,
+                            description: variation.description,
+                            responseTime: responseTime
+                        }
+                    });
+                }
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            updateStats();
+        }
+
+        // Helper Functions
+        function validateApiKey() {
+            const apiKey = elements.apiKey.value.trim();
+            if (!apiKey) {
+                alert('Please enter your API key');
+                return false;
+            }
+            if (!apiKey.startsWith('sk-')) {
+                alert('API key should start with "sk-"');
+                return false;
+            }
+            return true;
+        }
+
+        function addTestResult(result) {
+            state.testHistory.push({
+                ...result,
+                timestamp: new Date().toISOString()
+            });
+            
+            const resultElement = document.createElement('div');
+            resultElement.className = `test-result ${result.status} fade-in`;
+            resultElement.id = result.id;
+            
+            let statusClass = 'status-warning';
+            let statusIcon = '⚠️';
+            
+            if (result.status === 'success') {
+                statusClass = 'status-success';
+                statusIcon = '✅';
+                state.successfulTests++;
+            } else if (result.status === 'error') {
+                statusClass = 'status-error';
+                statusIcon = '❌';
+                state.failedTests++;
+            } else if (result.status === 'running') {
+                statusClass = 'status-warning';
+                statusIcon = '🔄';
+            }
+            
+            resultElement.innerHTML = `
+                <div class="test-header">
+                    <div class="test-title">
+                        ${statusIcon} ${result.title}
+                    </div>
+                    <div class="test-status ${statusClass}">
+                        ${result.status.toUpperCase()}
+                    </div>
+                </div>
+                <div>${result.details}</div>
+                ${result.responseTime ? `<div class="timestamp">Response time: ${result.responseTime}ms</div>` : ''}
+                ${result.data ? `
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Details:</div>
+                            <div class="detail-value">${JSON.stringify(result.data, null, 2)}</div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            // Add to container (at the top)
+            if (result.status !== 'running') {
+                elements.testResultsContainer.insertBefore(resultElement, elements.testResultsContainer.firstChild);
+            }
+            
+            // Update request history
+            updateRequestHistory();
+            
+            return resultElement;
+        }
+
+        function displayResponse(response) {
+            const formattedJson = syntaxHighlight(JSON.stringify(response, null, 2));
+            elements.responseViewer.innerHTML = formattedJson;
+            
+            // Auto-switch to response viewer tab
+            switchTab('responseViewer');
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function updateRequestHistory() {
+            elements.requestHistory.innerHTML = '';
+            
+            // Show last 10 requests
+            const recentHistory = state.testHistory.slice(-10).reverse();
+            
+            recentHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                let statusClass = 'status-error';
+                if (item.status === 'success') statusClass = 'status-200';
+                else if (item.status === 'warning') statusClass = 'status-warning';
+                
+                historyItem.innerHTML = `
+                    <div>
+                        <strong>${item.title}</strong>
+                        <span class="history-endpoint">${item.data?.endpoint?.split('/').pop() || 'N/A'}</span>
+                        <span class="history-status ${statusClass}">${item.status}</span>
+                    </div>
+                    <div class="history-time">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                `;
+                
+                historyItem.onclick = () => {
+                    // When clicked, show the full test result
+                    const testElement = document.getElementById(item.id);
+                    if (testElement) {
+                        testElement.scrollIntoView({ behavior: 'smooth' });
+                        testElement.style.animation = 'none';
+                        setTimeout(() => {
+                            testElement.style.animation = 'fadeIn 0.5s';
+                        }, 10);
+                    }
+                };
+                
+                elements.requestHistory.appendChild(historyItem);
+            });
+        }
+
+        function updateStats() {
+            state.currentTests = state.testHistory.filter(t => t.status !== 'running').length;
+            
+            elements.totalTests.textContent = state.currentTests;
+            elements.successTests.textContent = state.successfulTests;
+            elements.failedTests.textContent = state.failedTests;
+            
+            const avgTime = state.currentTests > 0 ? 
+                Math.round(state.totalResponseTime / state.currentTests) : 0;
+            elements.avgResponseTime.textContent = `${avgTime}ms`;
+        }
+
+        function updateButtons(isRunning) {
+            const buttons = document.querySelectorAll('.btn:not(.btn-danger)');
+            buttons.forEach(btn => {
+                btn.disabled = isRunning;
+            });
+            
+            // Update Run All button text
+            const runAllBtn = document.querySelector('.btn-primary');
+            if (runAllBtn) {
+                if (isRunning) {
+                    runAllBtn.innerHTML = '<span class="loader"></span> Running Tests...';
+                } else {
+                    runAllBtn.innerHTML = '<span>🚀</span> Run All Tests';
+                }
+            }
+        }
+
+        // Tool Functions
+        function generateCurlCommand() {
+            const apiKey = elements.apiKey.value || 'YOUR_API_KEY';
+            const prompt = elements.testPrompt.value || 'Hello';
+            
+            const curlCommand = `curl -X POST "${state.baseEndpoint}/chat/completions" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '{
+    "model": "deepseek-chat",
+    "messages": [
+      {
+        "role": "user",
+        "content": "${prompt.replace(/"/g, '\\"')}"
+      }
+    ],
+    "max_tokens": 100,
+    "temperature": 0.7
+  }'`;
+            
+            elements.curlCommand.textContent = curlCommand;
+            elements.curlCommandContainer.style.display = 'block';
+            switchTab('debugInfo');
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(curlCommand).then(() => {
+                alert('cURL command copied to clipboard!');
+            });
+        }
+
+        function stopTests() {
+            state.isRunning = false;
+            updateButtons(false);
+            
+            // Cancel any ongoing tests
+            // Note: We can't actually cancel fetch requests, but we can stop queued tests
+            console.log('Tests stopped by user');
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all test history?')) {
+                state.testHistory = [];
+                state.successfulTests = 0;
+                state.failedTests = 0;
+                state.totalResponseTime = 0;
+                elements.testResultsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🧹</div>
+                        <h3>History Cleared</h3>
+                        <p>Run new tests to see results</p>
+                    </div>
+                `;
+                updateStats();
+                updateRequestHistory();
+            }
+        }
+
+        function exportResults() {
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                apiEndpoint: state.baseEndpoint,
+                testHistory: state.testHistory,
+                stats: {
+                    totalTests: state.currentTests,
+                    successfulTests: state.successfulTests,
+                    failedTests: state.failedTests,
+                    averageResponseTime: state.currentTests > 0 ? 
+                        Math.round(state.totalResponseTime / state.currentTests) : 0
+                }
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `deepseek-api-test-${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyAllResults() {
+            const results = state.testHistory.map(test => ({
+                title: test.title,
+                status: test.status,
+                details: test.details,
+                timestamp: test.timestamp,
+                data: test.data
+            }));
+            
+            const text = results.map(r => 
+                `[${r.status.toUpperCase()}] ${r.title}\n${r.details}\n${JSON.stringify(r.data, null, 2)}\n`
+            ).join('\n---\n\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('All results copied to clipboard!');
+            });
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

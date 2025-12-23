@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YC Email Generator with Deepseek API</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --info-color: #2196F3;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background: var(--primary-gradient);
+            color: #333;
+            padding: 15px;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+        
+        .subtitle {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .panel {
+            background: var(--light-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e9ecef;
+        }
+        
+        .panel-title {
+            font-size: 1.3rem;
+            color: #2d3436;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            background: white;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+        
+        .upload-area {
+            border: 3px dashed #adb5bd;
+            border-radius: 8px;
+            padding: 30px 15px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #f8f9ff;
+        }
+        
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        @media (min-width: 480px) {
+            .control-buttons {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: var(--secondary-gradient);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(106, 17, 203, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .progress-section {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 16px;
+            background: #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 8px;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        @media (min-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .chart-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            height: 250px;
+        }
+        
+        .chart-box canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .data-container {
+            overflow-x: auto;
+            margin: 15px -20px -20px;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .data-table th {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.85rem;
+        }
+        
+        .data-table tr:hover {
+            background: var(--light-bg);
+        }
+        
+        .email-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .email-columns {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        @media (min-width: 480px) {
+            .email-columns {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .email-column {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 12px;
+            border-radius: 8px;
+            height: 180px;
+            overflow-y: auto;
+            margin-top: 15px;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #333;
+            word-break: break-word;
+        }
+        
+        .log-time {
+            color: #888;
+        }
+        
+        .log-success {
+            color: var(--success-color);
+        }
+        
+        .log-error {
+            color: var(--danger-color);
+        }
+        
+        .log-warning {
+            color: var(--warning-color);
+        }
+        
+        .rate-control {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        @media (min-width: 480px) {
+            .rate-control {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        .rate-control input {
+            width: 100px;
+        }
+        
+        .campaign-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6c757d;
+        }
+        
+        .status-active {
+            background: var(--success-color);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-paused {
+            background: var(--warning-color);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .company-count {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border: 1px solid #f5c6cb;
+            font-size: 0.9rem;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border: 1px solid #c3e6cb;
+            font-size: 0.9rem;
+        }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .mobile-only {
+            display: block;
+        }
+        
+        .desktop-only {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-only {
+                display: none;
+            }
+            .desktop-only {
+                display: block;
+            }
+        }
+        
+        .collapsible-section {
+            margin-bottom: 15px;
+        }
+        
+        .collapsible-header {
+            background: white;
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        
+        .collapsible-content {
+            padding: 15px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            display: none;
+        }
+        
+        .collapsible-content.expanded {
+            display: block;
+        }
+        
+        .info-tooltip {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: var(--info-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 12px;
+            line-height: 16px;
+            margin-left: 5px;
+            cursor: help;
+        }
+        
+        .api-settings {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        @media (min-width: 480px) {
+            .api-settings {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e8f5e8;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .api-status.error {
+            background: #ffebee;
+            border-color: #ffcdd2;
+        }
+        
+        .status-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+        
+        .status-dot.error {
+            background: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 YC Email Generator</h1>
+            <p class="subtitle">Bulk personalized email generation using Deepseek API</p>
+            <div class="mobile-only" style="margin-top: 10px; font-size: 0.8rem;">
+                <small>Optimized for mobile viewing</small>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <!-- Left Panel: Controls and Input -->
+            <div class="panel">
+                <h2 class="panel-title">📊 Campaign Controls</h2>
+                
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('dataSection')">
+                        <span>Data Input</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="collapsible-content expanded" id="dataSection">
+                        <div class="input-group">
+                            <label for="csvUpload">Upload YC Companies CSV</label>
+                            <div class="upload-area" id="csvUploadArea">
+                                <div class="upload-icon">📁</div>
+                                <p>Drag & drop your CSV file here or click to browse</p>
+                                <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                                <p class="company-count" id="companyCount">No file loaded</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('apiSection')">
+                        <span>API Configuration</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="collapsible-content" id="apiSection">
+                        <div class="api-settings">
+                            <div class="input-group">
+                                <label for="apiKey">
+                                    Deepseek API Key
+                                    <span class="info-tooltip" title="Get your API key from platform.deepseek.com">?</span>
+                                </label>
+                                <input type="password" id="apiKey" placeholder="sk-...">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="apiEndpoint">API Endpoint</label>
+                                <select id="apiEndpoint">
+                                    <option value="https://api.deepseek.com">api.deepseek.com</option>
+                                    <option value="https://api.deepseek.ai">api.deepseek.ai</option>
+                                    <option value="http://localhost:3000/proxy">Local Proxy</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="apiStatus" class="api-status">
+                            <div class="status-dot"></div>
+                            <div class="status-text">API: Not tested</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('promptSection')">
+                        <span>Prompt Template</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="collapsible-content" id="promptSection">
+                        <div class="input-group">
+                            <label for="customPrompt">Custom Prompt Template</label>
+                            <textarea id="customPrompt" placeholder="Write a personalized email for {company_name} ({batch} batch). The company is {short_description}. They are currently {is_hiring_status}. Include two lines: one about their specific domain ({tags}) and one about potential collaboration opportunities.">
+Write a personalized email for {company_name} (YC {batch}). 
+
+Company description: {short_description}
+Status: {is_hiring_status}
+Domain: {tags}
+
+Generate exactly two lines for the email:
+Line 1 (Specific domain insight): [Write about their specific domain/tags]
+Line 2 (Collaboration opportunity): [Suggest a specific collaboration opportunity]
+
+Keep it professional but warm.</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleCollapsible('rateSection')">
+                        <span>Rate Control</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="collapsible-content" id="rateSection">
+                        <div class="rate-control">
+                            <label for="requestRate">Requests per second:</label>
+                            <input type="number" id="requestRate" min="0.1" max="10" step="0.1" value="1">
+                            <small style="color: #666;">(Set to 0 to pause)</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="btn btn-primary" id="startBtn" onclick="startCampaign()">
+                        <span>▶️</span> Start
+                    </button>
+                    <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()" disabled>
+                        <span>⏸️</span> Pause
+                    </button>
+                    <button class="btn btn-danger" id="stopBtn" onclick="stopCampaign()" disabled>
+                        <span>⏹️</span> Stop
+                    </button>
+                    <button class="btn btn-success" id="exportBtn" onclick="exportData()" disabled>
+                        <span>📥</span> Export
+                    </button>
+                </div>
+                
+                <div class="campaign-status" id="campaignStatus">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">Campaign not started</span>
+                </div>
+                
+                <div class="progress-section">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <label>Progress</label>
+                        <span id="progressText">0/0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Stats and Output -->
+            <div class="panel">
+                <h2 class="panel-title">📈 Statistics & Results</h2>
+                
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCompanies">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="processed">0</div>
+                        <div class="stat-label">Processed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="successful">0</div>
+                        <div class="stat-label">Successful</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="failed">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="remaining">0</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="apiCost">$0.00</div>
+                        <div class="stat-label">Est. Cost</div>
+                    </div>
+                </div>
+                
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                
+                <div id="emailPreview" style="display: none;">
+                    <h3 style="margin-bottom: 10px; font-size: 1.1rem;">📧 Email Preview</h3>
+                    <div class="email-preview">
+                        <div style="margin-bottom: 8px;"><strong>To:</strong> <span id="previewTo"></span></div>
+                        <div style="margin-bottom: 12px;"><strong>Subject:</strong> <span id="previewSubject"></span></div>
+                        <div class="email-columns">
+                            <div class="email-column">
+                                <strong>Line 1:</strong>
+                                <p id="previewLine1" style="margin-top: 5px;"></p>
+                            </div>
+                            <div class="email-column">
+                                <strong>Line 2:</strong>
+                                <p id="previewLine2" style="margin-top: 5px;"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="logContainer" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 1.1rem; margin: 0;">📝 Activity Log</h3>
+                        <button onclick="clearLog()" style="padding: 5px 10px; font-size: 0.8rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear</button>
+                    </div>
+                    <div class="log-container" id="logOutput"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Table Section -->
+        <div class="data-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 class="panel-title" style="border: none; padding: 0; margin: 0;">📋 Generated Email Data</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="toggleTable()" id="toggleTableBtn" style="padding: 8px 15px; font-size: 0.9rem; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer;">Hide Table</button>
+                    <button onclick="downloadTableAsImage()" style="padding: 8px 15px; font-size: 0.9rem; background: var(--info-color); color: white; border: none; border-radius: 6px; cursor: pointer;">📸 Screenshot</button>
+                </div>
+            </div>
+            <div id="tableWrapper" style="overflow-x: auto;">
+                <table class="data-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Company</th>
+                            <th>Email</th>
+                            <th>Batch</th>
+                            <th>Hiring</th>
+                            <th>Line 1</th>
+                            <th>Line 2</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="tablePlaceholder" style="text-align: center; padding: 40px; color: #6c757d; display: none;">
+                <p>Table is hidden. Click "Show Table" to display data.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORS Proxy Modal -->
+    <div id="proxyModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 25px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin-bottom: 15px; color: var(--danger-color);">⚠️ CORS Issue Detected</h2>
+            <p style="margin-bottom: 15px;">The browser is blocking direct API calls to Deepseek. This is a security feature called CORS.</p>
+            
+            <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin-bottom: 10px; color: var(--info-color);">Recommended Solutions:</h4>
+                <ol style="padding-left: 20px; margin-bottom: 10px;">
+                    <li style="margin-bottom: 8px;"><strong>Use a CORS Proxy:</strong> Add this URL to your API endpoint: <code>https://corsproxy.io/?</code></li>
+                    <li style="margin-bottom: 8px;"><strong>Run Local Proxy:</strong> Install and run a simple proxy server</li>
+                    <li><strong>Browser Extension:</strong> Install a CORS extension (not recommended for security)</li>
+                </ol>
+            </div>
+            
+            <div class="input-group">
+                <label for="corsProxyUrl">CORS Proxy URL (optional):</label>
+                <input type="text" id="corsProxyUrl" placeholder="https://corsproxy.io/?" value="https://corsproxy.io/?">
+                <small style="color: #666;">This will be prepended to the API endpoint</small>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="useCorsProxy()" style="padding: 10px 20px; background: var(--success-color); color: white; border: none; border-radius: 6px; cursor: pointer;">Use Proxy</button>
+                <button onclick="document.getElementById('proxyModal').style.display = 'none'" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let companiesData = [];
+        let processedData = [];
+        let campaignActive = false;
+        let campaignPaused = false;
+        let currentIndex = 0;
+        let requestInterval = null;
+        let charts = {};
+        let corsProxy = '';
+        
+        // Chart colors
+        const chartColors = {
+            primary: '#6a11cb',
+            secondary: '#2575fc',
+            success: '#4CAF50',
+            danger: '#f44336',
+            warning: '#ff9800',
+            info: '#2196F3'
+        };
+        
+        // Initialize charts
+        function initializeCharts() {
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            
+            // Destroy existing charts
+            if (charts.progress) charts.progress.destroy();
+            if (charts.status) charts.status.destroy();
+            
+            charts.progress = new Chart(progressCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Start'],
+                    datasets: [{
+                        label: 'Processed Companies',
+                        data: [0],
+                        borderColor: chartColors.primary,
+                        backgroundColor: chartColors.primary + '20',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            charts.status = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Successful', 'Failed', 'Pending'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            chartColors.success,
+                            chartColors.danger,
+                            chartColors.info
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: window.innerWidth < 768 ? 10 : 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update charts
+        function updateCharts() {
+            if (!charts.progress || !charts.status) return;
+            
+            const processedCount = processedData.length;
+            const total = companiesData.length;
+            
+            // Update progress chart
+            if (charts.progress.data.labels.length > 20) {
+                charts.progress.data.labels.shift();
+                charts.progress.data.datasets[0].data.shift();
+            }
+            charts.progress.data.labels.push(`#${processedCount}`);
+            charts.progress.data.datasets[0].data.push(processedCount);
+            charts.progress.update();
+            
+            // Update status chart
+            const successful = processedData.filter(c => c.status === 'success').length;
+            const failed = processedData.filter(c => c.status === 'error').length;
+            const pending = total - processedCount;
+            
+            charts.status.data.datasets[0].data = [successful, failed, pending];
+            charts.status.update();
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const total = companiesData.length;
+            const processed = processedData.length;
+            const successful = processedData.filter(c => c.status === 'success').length;
+            const failed = processedData.filter(c => c.status === 'error').length;
+            const remaining = total - processed;
+            
+            // Estimate cost (Deepseek pricing: ~$0.0005 per 1K tokens)
+            const estimatedCost = (processed * 0.0005).toFixed(4);
+            
+            document.getElementById('totalCompanies').textContent = total;
+            document.getElementById('processed').textContent = processed;
+            document.getElementById('successful').textContent = successful;
+            document.getElementById('failed').textContent = failed;
+            document.getElementById('remaining').textContent = remaining;
+            document.getElementById('apiCost').textContent = `$${estimatedCost}`;
+            
+            // Update progress bar
+            const progressPercent = total > 0 ? (processed / total) * 100 : 0;
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+            document.getElementById('progressText').textContent = `${processed}/${total}`;
+            
+            updateCharts();
+        }
+        
+        // Log function
+        function log(message, type = 'info') {
+            const logOutput = document.getElementById('logOutput');
+            const logContainer = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            if (!logOutput) return;
+            
+            logContainer.style.display = 'block';
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-${type}"> ${message}</span>
+            `;
+            
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        // Clear log
+        function clearLog() {
+            const logOutput = document.getElementById('logOutput');
+            if (logOutput) {
+                logOutput.innerHTML = '';
+            }
+        }
+        
+        // Parse CSV file
+        function parseCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        if (results.errors.length > 0) {
+                            log('CSV parsing errors: ' + JSON.stringify(results.errors), 'error');
+                        }
+                        resolve(results.data);
+                    },
+                    error: (error) => {
+                        reject(error);
+                    }
+                });
+            });
+        }
+        
+        // Upload CSV handler
+        document.getElementById('csvUploadArea').addEventListener('click', () => {
+            document.getElementById('csvFile').click();
+        });
+        
+        document.getElementById('csvFile').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                log(`Loading CSV file: ${file.name}`, 'info');
+                const rawData = await parseCSV(file);
+                
+                // Clean and validate data
+                companiesData = rawData.map((company, index) => {
+                    // Extract email from various possible column names
+                    let email = company.email || 
+                               company['founders/0/email'] || 
+                               company['Email'] ||
+                               company['Founder Email'] ||
+                               '';
+                    
+                    // Clean up hiring status
+                    let isHiring = company.is_hiring || 
+                                  company.hiring || 
+                                  company['is_hiring'] ||
+                                  'false';
+                    
+                    // Extract batch
+                    let batch = company.batch || 
+                               company.batch_name || 
+                               company['batch'] ||
+                               '';
+                    
+                    // Extract tags
+                    let tags = company.tags || 
+                              company.domain || 
+                              company.category ||
+                              '';
+                    
+                    // Extract company name
+                    let companyName = company.company_name || 
+                                     company.name || 
+                                     company['company_name'] ||
+                                     `Company ${index + 1}`;
+                    
+                    // Extract short description
+                    let shortDesc = company.short_description || 
+                                   company.description || 
+                                   company['short_description'] ||
+                                   '';
+                    
+                    return {
+                        id: index + 1,
+                        company_name: companyName,
+                        email: email.trim(),
+                        batch: batch,
+                        is_hiring: isHiring.toString().toLowerCase() === 'true',
+                        short_description: shortDesc.substring(0, 200), // Limit length
+                        tags: tags.substring(0, 100), // Limit length
+                        line1: '',
+                        line2: '',
+                        status: 'pending',
+                        error: null
+                    };
+                }).filter(company => {
+                    // Only keep companies with valid emails
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return emailRegex.test(company.email);
+                });
+                
+                document.getElementById('companyCount').textContent = 
+                    `Loaded ${companiesData.length} companies with valid emails`;
+                
+                // Reset processed data
+                processedData = [];
+                currentIndex = 0;
+                
+                // Update UI
+                updateTable();
+                updateStats();
+                
+                // Enable export button if we have data
+                document.getElementById('exportBtn').disabled = companiesData.length === 0;
+                
+                log(`Successfully loaded ${companiesData.length} companies`, 'success');
+            } catch (error) {
+                log(`Error loading CSV: ${error.message}`, 'error');
+                alert('Error loading CSV file. Please check the file format.');
+            }
+        });
+        
+        // Update results table
+        function updateTable() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // Show last 30 entries or all if less
+            const displayData = processedData.slice(-30);
+            
+            if (displayData.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #6c757d;">
+                        No data generated yet. Start the campaign to generate emails.
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            displayData.forEach(company => {
+                const row = document.createElement('tr');
+                
+                let statusBadge = '';
+                if (company.status === 'success') {
+                    statusBadge = '<span style="color: #4CAF50; font-weight: bold;">✓</span>';
+                } else if (company.status === 'error') {
+                    statusBadge = `<span style="color: #f44336; font-weight: bold;">✗</span>`;
+                } else {
+                    statusBadge = '<span style="color: #ff9800;">⏳</span>';
+                }
+                
+                // Truncate long text for mobile
+                const companyName = company.company_name.length > 20 ? 
+                    company.company_name.substring(0, 20) + '...' : company.company_name;
+                const email = company.email.length > 25 ? 
+                    company.email.substring(0, 25) + '...' : company.email;
+                const line1 = company.line1 ? 
+                    (company.line1.length > 30 ? company.line1.substring(0, 30) + '...' : company.line1) : '-';
+                const line2 = company.line2 ? 
+                    (company.line2.length > 30 ? company.line2.substring(0, 30) + '...' : company.line2) : '-';
+                
+                row.innerHTML = `
+                    <td>${company.id}</td>
+                    <td title="${company.company_name}">${companyName}</td>
+                    <td title="${company.email}">${email}</td>
+                    <td>${company.batch || '-'}</td>
+                    <td>${company.is_hiring ? '✅' : '❌'}</td>
+                    <td title="${company.line1 || ''}">${line1}</td>
+                    <td title="${company.line2 || ''}">${line2}</td>
+                    <td>${statusBadge}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Toggle table visibility
+        function toggleTable() {
+            const tableWrapper = document.getElementById('tableWrapper');
+            const placeholder = document.getElementById('tablePlaceholder');
+            const button = document.getElementById('toggleTableBtn');
+            
+            if (tableWrapper.style.display === 'none') {
+                tableWrapper.style.display = 'block';
+                placeholder.style.display = 'none';
+                button.textContent = 'Hide Table';
+            } else {
+                tableWrapper.style.display = 'none';
+                placeholder.style.display = 'block';
+                button.textContent = 'Show Table';
+            }
+        }
+        
+        // Download table as image
+        function downloadTableAsImage() {
+            const element = document.getElementById('resultsTable');
+            html2canvas(element).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `yc-emails-${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+        
+        // Generate prompt for a company
+        function generatePrompt(company, customPrompt) {
+            let prompt = customPrompt;
+            
+            // Replace placeholders
+            prompt = prompt.replace(/{company_name}/g, company.company_name);
+            prompt = prompt.replace(/{batch}/g, company.batch);
+            prompt = prompt.replace(/{short_description}/g, company.short_description);
+            prompt = prompt.replace(/{is_hiring}/g, company.is_hiring ? 'hiring' : 'not hiring');
+            prompt = prompt.replace(/{is_hiring_status}/g, company.is_hiring ? 'actively hiring' : 'not currently hiring');
+            prompt = prompt.replace(/{tags}/g, company.tags);
+            prompt = prompt.replace(/{email}/g, company.email);
+            
+            return prompt;
+        }
+        
+        // Test API connection
+        async function testAPIConnection() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) return false;
+            
+            try {
+                const endpoint = document.getElementById('apiEndpoint').value;
+                const testUrl = corsProxy ? `${corsProxy}${endpoint}/v1/models` : `${endpoint}/v1/models`;
+                
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        // Call Deepseek API with CORS proxy support
+        async function callDeepseekAPI(company, prompt) {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                throw new Error('API key not provided');
+            }
+            
+            const endpoint = document.getElementById('apiEndpoint').value;
+            const apiUrl = `${endpoint}/v1/chat/completions`;
+            const url = corsProxy ? `${corsProxy}${encodeURIComponent(apiUrl)}` : apiUrl;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 200,
+                        stream: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API error ${response.status}: ${errorText.substring(0, 100)}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('Invalid API response format');
+                }
+                
+                return data.choices[0].message.content;
+            } catch (error) {
+                // Check if it's a CORS error
+                if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+                    showCorsModal();
+                    throw new Error('CORS error - Please configure a proxy');
+                }
+                throw error;
+            }
+        }
+        
+        // Show CORS modal
+        function showCorsModal() {
+            document.getElementById('proxyModal').style.display = 'flex';
+        }
+        
+        // Use CORS proxy
+        function useCorsProxy() {
+            corsProxy = document.getElementById('corsProxyUrl').value;
+            if (corsProxy && !corsProxy.endsWith('/') && !corsProxy.endsWith('?')) {
+                corsProxy += '/';
+            }
+            document.getElementById('proxyModal').style.display = 'none';
+            log('CORS proxy configured: ' + corsProxy, 'success');
+        }
+        
+        // Process a single company
+        async function processCompany(index) {
+            if (index >= companiesData.length) {
+                stopCampaign();
+                log('🎉 Campaign completed! All companies processed.', 'success');
+                return;
+            }
+            
+            const company = companiesData[index];
+            const customPrompt = document.getElementById('customPrompt').value;
+            
+            try {
+                log(`Processing ${company.company_name}`, 'info');
+                
+                const prompt = generatePrompt(company, customPrompt);
+                const response = await callDeepseekAPI(company, prompt);
+                
+                // Parse response to extract two lines
+                const lines = response.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 10) // Filter out very short lines
+                    .slice(0, 2);
+                
+                // If we couldn't find two lines, use the first sentence and a default
+                if (lines.length < 2) {
+                    const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+                    lines[0] = sentences[0] || 'Great work on your innovative approach!';
+                    lines[1] = sentences[1] || 'Looking forward to potential collaboration opportunities.';
+                }
+                
+                // Clean up lines
+                const cleanLine = (line) => {
+                    return line.replace(/^["']|["']$/g, '') // Remove quotes
+                              .replace(/^Line \d+[:\-]?\s*/i, '') // Remove "Line 1:" prefix
+                              .trim();
+                };
+                
+                // Update company data
+                company.line1 = cleanLine(lines[0] || '');
+                company.line2 = cleanLine(lines[1] || '');
+                company.status = 'success';
+                company.processedAt = new Date().toISOString();
+                
+                processedData.push({...company});
+                
+                // Show preview for recent success
+                if (processedData.length <= 5 || Math.random() < 0.1) {
+                    showEmailPreview(company);
+                }
+                
+                log(`✓ ${company.company_name}: Email generated`, 'success');
+            } catch (error) {
+                log(`✗ ${company.company_name}: ${error.message}`, 'error');
+                
+                company.status = 'error';
+                company.error = error.message;
+                company.processedAt = new Date().toISOString();
+                
+                processedData.push({...company});
+                
+                // Show CORS modal on first CORS error
+                if (error.message.includes('CORS') && !corsProxy) {
+                    showCorsModal();
+                }
+            }
+            
+            // Update UI
+            updateTable();
+            updateStats();
+            
+            // Move to next company
+            currentIndex = index + 1;
+        }
+        
+        // Show email preview
+        function showEmailPreview(company) {
+            const preview = document.getElementById('emailPreview');
+            preview.style.display = 'block';
+            
+            document.getElementById('previewTo').textContent = company.email;
+            document.getElementById('previewSubject').textContent = 
+                `Re: ${company.company_name} (YC ${company.batch})`;
+            document.getElementById('previewLine1').textContent = company.line1 || 'No line generated';
+            document.getElementById('previewLine2').textContent = company.line2 || 'No line generated';
+        }
+        
+        // Start campaign
+        async function startCampaign() {
+            if (companiesData.length === 0) {
+                alert('Please upload a CSV file first');
+                return;
+            }
+            
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('Please enter your Deepseek API key');
+                return;
+            }
+            
+            // Test API connection
+            log('Testing API connection...', 'info');
+            const apiTest = await testAPIConnection();
+            if (!apiTest && !corsProxy) {
+                const useProxy = confirm('API connection failed. This might be due to CORS restrictions. Would you like to configure a CORS proxy?');
+                if (useProxy) {
+                    showCorsModal();
+                    return;
+                }
+            }
+            
+            campaignActive = true;
+            campaignPaused = false;
+            
+            // Update UI
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('csvFile').disabled = true;
+            
+            document.getElementById('statusIndicator').className = 'status-indicator status-active';
+            document.getElementById('statusText').textContent = 'Campaign running';
+            
+            log('Campaign started', 'success');
+            
+            // Start processing
+            processNextCompany();
+        }
+        
+        // Process next company with rate limiting
+        function processNextCompany() {
+            if (!campaignActive || campaignPaused) return;
+            
+            if (currentIndex < companiesData.length) {
+                processCompany(currentIndex);
+                
+                // Schedule next request based on rate
+                const rate = parseFloat(document.getElementById('requestRate').value) || 1;
+                const delay = rate > 0 ? (1000 / rate) : 0;
+                
+                if (delay > 0) {
+                    setTimeout(processNextCompany, delay);
+                } else {
+                    // If rate is 0, wait for user to resume
+                    log('Rate is set to 0. Campaign paused.', 'warning');
+                    togglePause();
+                }
+            } else {
+                stopCampaign();
+                log('Campaign completed successfully!', 'success');
+            }
+        }
+        
+        // Toggle pause
+        function togglePause() {
+            campaignPaused = !campaignPaused;
+            
+            const pauseBtn = document.getElementById('pauseBtn');
+            const statusIndicator = document.getElementById('statusIndicator');
+            
+            if (campaignPaused) {
+                pauseBtn.innerHTML = '<span>▶️</span> Resume';
+                statusIndicator.className = 'status-indicator status-paused';
+                document.getElementById('statusText').textContent = 'Campaign paused';
+                log('Campaign paused', 'warning');
+            } else {
+                pauseBtn.innerHTML = '<span>⏸️</span> Pause';
+                statusIndicator.className = 'status-indicator status-active';
+                document.getElementById('statusText').textContent = 'Campaign running';
+                log('Campaign resumed', 'success');
+                processNextCompany();
+            }
+        }
+        
+        // Stop campaign
+        function stopCampaign() {
+            campaignActive = false;
+            campaignPaused = false;
+            
+            // Update UI
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('csvFile').disabled = false;
+            
+            document.getElementById('statusIndicator').className = 'status-indicator';
+            document.getElementById('statusText').textContent = 'Campaign stopped';
+            
+            log('Campaign stopped', 'warning');
+        }
+        
+        // Export data
+        function exportData() {
+            if (processedData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Prepare CSV data
+            const headers = [
+                'ID', 'Company', 'Email', 'Batch', 'Hiring', 
+                'Line 1', 'Line 2', 'Status', 'Error', 'Processed At'
+            ];
+            
+            const csvData = processedData.map(company => [
+                company.id,
+                company.company_name,
+                company.email,
+                company.batch,
+                company.is_hiring ? 'Yes' : 'No',
+                `"${(company.line1 || '').replace(/"/g, '""')}"`,
+                `"${(company.line2 || '').replace(/"/g, '""')}"`,
+                company.status,
+                company.error || '',
+                company.processedAt
+            ]);
+            
+            const csvContent = [
+                headers.join(','),
+                ...csvData.map(row => row.join(','))
+            ].join('\n');
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `yc_emails_${new Date().toISOString().split('T')[0]}_${processedData.length}_entries.csv`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            log(`Data exported (${processedData.length} entries)`, 'success');
+        }
+        
+        // Toggle collapsible sections
+        function toggleCollapsible(sectionId) {
+            const content = document.getElementById(sectionId);
+            const header = content.previousElementSibling;
+            const arrow = header.querySelector('span:last-child');
+            
+            content.classList.toggle('expanded');
+            arrow.textContent = content.classList.contains('expanded') ? '▼' : '▶';
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            
+            // Drag and drop for CSV
+            const uploadArea = document.getElementById('csvUploadArea');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = chartColors.primary;
+                uploadArea.style.background = '#f0f0ff';
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = '#adb5bd';
+                uploadArea.style.background = 'white';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#adb5bd';
+                uploadArea.style.background = 'white';
+                
+                const file = e.dataTransfer.files[0];
+                if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
+                    document.getElementById('csvFile').files = e.dataTransfer.files;
+                    document.getElementById('csvFile').dispatchEvent(new Event('change'));
+                } else {
+                    alert('Please drop a CSV file');
+                }
+            });
+            
+            // Initialize all collapsible sections as expanded on desktop
+            if (window.innerWidth >= 768) {
+                const sections = ['dataSection', 'apiSection', 'promptSection', 'rateSection'];
+                sections.forEach(section => {
+                    const content = document.getElementById(section);
+                    if (content) {
+                        content.classList.add('expanded');
+                        const header = content.previousElementSibling;
+                        const arrow = header.querySelector('span:last-child');
+                        arrow.textContent = '▼';
+                    }
+                });
+            }
+            
+            // Handle window resize
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    initializeCharts();
+                }, 250);
+            });
+        });
+    </script>
+</body>
+</html>
